@@ -106,18 +106,69 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             make move                             ;;;
+;;;                              make move                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun make-move (move board player)
   (let ((beans (car (nthcdr move board))))
-    (if (zerop beans)
+    (if (valid_move move player board)
       (error "not a valid move")
       (spread-beans beans (next-house move (1+ move)) move 
                     (replace-nth board move 0) player)
         )
       )
  )
+;;; }}} ;;;
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             game loop                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defun game-loop (north-strategi south-strategi)
+    (let ((board *board*))
+      (loop while (not (game-over))
+             do (progn 
+                  (print-board board)
+                  (setq board (turn board north-strategi north))
+                  (print-board board)
+                  (setq board (turn board south-strategi south))))
+      t))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                               turn                                ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod turn (board strategi player)
+    (make-move (funcall strategi) board player))
+    
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                          human strategi                           ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun human-strategi ()
+    (format t "please enter your move ~%")
+    (read))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             game-over                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun game-over ()
+  (if (or (> *north-score* 24) (> *south-score* 24))
+    t
+    nil)
+    )
+
+
 
 
 
@@ -196,9 +247,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-range (player house)
-  (if (and (eq player north) (and (< house 12) (> house 5)))
+  (if (and (eq player south) (and (< house 12) (> house 5)))
     t
-    (if (and (eq player south ) (and (> house -1) (< house 6)))
+    (if (and (eq player north ) (and (> house -1) (< house 6)))
       t
       nil)
     )
@@ -214,7 +265,7 @@
 
 (defun spread-beans (beans house move board player)
   (if (zerop beans)
-    (score board house player)   
+    (score board (1- house) player)   
     (spread-beans (1- beans) (next-house move (1+ house)) move 
                   (replace-nth board house (+ (car (nthcdr house board)) 1)) player)
       )
