@@ -17,24 +17,26 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                        player definitions                         ;;;
+;;;                     playe r definitions                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconstant north 0)
 (defconstant south 1)
 (defvar *north-score* 0)
 (defvar *south-score* 0)
+;;;}}}
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                        board definitions                          ;;;
+;;;                        board definitions                          ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
-
+;;;}}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           upper player                            ;;;
+;;;                           upper board                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -45,11 +47,11 @@
 (defconstant e 7)
 (defconstant f 6)
 
-
+;;; }}} ;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           lower player                            ;;;
+;;;                           lower board                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconstant g 0)
@@ -59,12 +61,12 @@
 (defconstant k 4)
 (defconstant l 5)
 
-
+;;; }}} ;;;
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                      reset board and scores                       ;;;
+;;;                      reset board and scores                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun reset-game ()
@@ -87,11 +89,11 @@
   )
 
 
-
+;;; }}} ;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                      return opposite player                       ;;;
+;;;                      re turn opposite player                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -99,7 +101,7 @@
 (defun opponent (player) (if (eql player north) south north))
 
 
-
+;;; }}} ;;;
 
 
 
@@ -112,7 +114,7 @@
     (if (zerop beans)
       (error "not a valid move")
       (spread-beans beans (next-house move (1+ move)) move 
-                    (replace-nth board move 0))
+                    (replace-nth board move 0) player)
         )
       )
  )
@@ -134,6 +136,8 @@
  )
 
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 return sum of beans for a player                  ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,8 +146,13 @@
 (defun sum_beans (player board)
   (if (eq player north)
     (apply '+ (nthcdr 6 board) )
-    (apply '+ (subseq board 0 6)))
-  )
+    (apply '+ (subseq board 0 6))))
+
+(defun set-player-score (player n)
+  (if (eql player north)
+    (setq *north-score* (+ *north-score* n))
+    (setq *south-score* (+ *south-score* n))
+))
 
 
 
@@ -155,15 +164,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun valid_move (move player board)
-  )
+ (and 
+   (and 
+     (> (get-beans move board) 0) 
+     (player-range player move)) 
+   (feed-opponent move player board))) 
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                           feed oponent                            ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
+
+(defmethod feed-opponent (move player board)
+  (if (> (sum_beans (opponent player) board) 0)
+    t
+    (if (and (> move -1) (< move 6))
+      (> (+ (get-beans move board) move) 5)
+      (> (+ (get-beans move board) move) 11))))
+  
 
 
-
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             get beans                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmethod get-beans (move board)
+  (car (nthcdr move board))
+    )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;             return if a house is in the player range              ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -185,18 +212,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defun spread-beans (beans house move board)
+(defun spread-beans (beans house move board player)
   (if (zerop beans)
-    board    
+    (score board house player)   
     (spread-beans (1- beans) (next-house move (1+ house)) move 
-                  (replace-nth board house (+ (car (nthcdr house board)) 1)))
+                  (replace-nth board house (+ (car (nthcdr house board)) 1)) player)
       )
   )
   
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                           update score                            ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+(defun score (board house player)
+   (if (player-range (opponent player) house)
+     (if (or (eq (get-beans house board) 2) 
+             (eq (get-beans house board) 3) )
+       (progn
+         (set-player-score player (get-beans house board))
+         (score (replace-nth board house 0) (1- house) player))
+       board)
+     board))
 
 
 
