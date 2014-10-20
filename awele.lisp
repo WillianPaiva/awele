@@ -26,7 +26,6 @@
 (defvar *south-score* 0)
 ;;;}}}
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                        board definitions                          ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,7 +48,6 @@
 
 ;;; }}} ;;;
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                           lower board                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,8 +60,6 @@
 (defconstant l 5)
 
 ;;; }}} ;;;
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                      reset board and scores                       ;;;{{{
@@ -91,7 +87,6 @@
 
 ;;; }}} ;;;
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                      re turn opposite player                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -103,77 +98,91 @@
 
 ;;; }}} ;;;
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                              make move                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun make-move (move board player)
+  ;(format t "make move ~d" player)
   (let ((beans (car (nthcdr move board))))
     (if (valid_move move player board)
-      (error "not a valid move")
       (spread-beans beans (next-house move (1+ move)) move 
                     (replace-nth board move 0) player)
-        )
-      )
- )
+      (error "not a valid move"))))
 ;;; }}} ;;;
 
-
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             game loop                             ;;;
+;;;                             game loop                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defun game-loop (north-strategi south-strategi)
-    (let ((board *board*))
-      (loop while (not (game-over))
-             do (progn 
-                  (print-board board)
-                  (setq board (turn board north-strategi north))
-                  (print-board board)
-                  (setq board (turn board south-strategi south))))
-      t))
+  (let ((board *board*))
+    (reset-game)
+    (loop while (not (game-over))
+          do (progn 
+               (print-board board)
+               (setq board (turn board north-strategi north))
+               (print-board board)
+               (setq board (turn board south-strategi south))))
+    t))
 
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                               turn                                ;;;
+;;;                               turn                                ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod turn (board strategi player)
-    (make-move (funcall strategi) board player))
-    
+  ;(format t "turn ~d" player)
+  (make-move (funcall strategi player board) board player))
 
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                          human strategi                           ;;;
+;;;                          human strategi                           ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun human-strategi ()
+(defun human-strategi (player board)
+  (let ((li (valid-list player board)))
+    (format t "valid moves -->")
+    (loop for line from 0 to (1-(length li)) do
+          (format t "    ~d" (car (nthcdr line li))))
+    (format t "~%")
     (format t "please enter your move ~%")
-    (read))
+    (read)))
+
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             game-over                             ;;;
+;;;                          random strategi                          ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(defun randon-stratey (player board)
+    (let ((li (valid-list player board)))
+      (if (listp li)
+        (nth (random (length li)) li)
+        (error "bad move"))))
+
+
+
+;;; }}} ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             game-over                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun game-over ()
   (if (or (> *north-score* 24) (> *south-score* 24))
     t
     nil)
-    )
+  )
 
-
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                  return next house for the move                   ;;;
+;;;                  return next house for the move                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun next-house (move house)
@@ -183,14 +192,13 @@
       (next-house move (+ house 1))
       house
       )
+    )
   )
- )
 
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                 return sum of beans for a player                  ;;;
+;;;                 return sum of beans for a player                  ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -203,28 +211,41 @@
   (if (eql player north)
     (setq *north-score* (+ *north-score* n))
     (setq *south-score* (+ *south-score* n))
-))
+    ))
 
 
-
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     return if move is valid                       ;;;
+;;;                     return if move is valid                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun valid_move (move player board)
- (and 
-   (and 
-     (> (get-beans move board) 0) 
-     (player-range player move)) 
-   (feed-opponent move player board))) 
+  ;(format t "valid move ~d" player)
+  (and 
+    (and 
+      (> (get-beans move board) 0) 
+      (player-range player move)) 
+    (feed-opponent move player board))) 
 
+;;; }}} ;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           feed oponent                            ;;;
+;;;             return list of valid moves for a player               ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun valid-list (player board &optional (valid '()) (cn 11) (cs 5))
+    (if (or (eq cn 5) (eq cs -1))
+      valid
+      (if (eq player north)
+        (valid-list player board (if (valid_move cn player board) (cons cn valid) valid) (1- cn) cs)
+        (valid-list player board (if (valid_move cs player board) (cons cs valid) valid) cn (1- cs)))))
+
+;;; }}} ;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                           feed oponent                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
 
 (defmethod feed-opponent (move player board)
@@ -233,65 +254,68 @@
     (if (and (> move -1) (< move 6))
       (> (+ (get-beans move board) move) 5)
       (> (+ (get-beans move board) move) 11))))
-  
 
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             get beans                             ;;;
+;;;                             get beans                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmethod get-beans (move board)
   (car (nthcdr move board))
-    )
+  )
+;;; }}} ;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;             return if a house is in the player range              ;;;
+;;;             return if a house is in the player range              ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-range (player house)
-  (if (and (eq player south) (and (< house 12) (> house 5)))
+  ;(format t "player range ~d   house --> ~d" player house)
+  (if (and (eq player north) (and (< house 12) (> house 5)))
     t
-    (if (and (eq player north ) (and (> house -1) (< house 6)))
+    (if (and (eq player south) (and (> house -1) (< house 6)))
       t
       nil)
     )
   )
 
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                   spread the beans after a move                   ;;;
+;;;                   spread the beans after a move                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defun spread-beans (beans house move board player)
+  ;(format t "spread ~d" player)
   (if (zerop beans)
-    (score board (1- house) player)   
+    (score board (if (eq house 0) 11 (1- house)) player)
     (spread-beans (1- beans) (next-house move (1+ house)) move 
                   (replace-nth board house (+ (car (nthcdr house board)) 1)) player)
-      )
+    )
   )
-  
 
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           update score                            ;;;
+;;;                           update score                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun score (board house player)
-   (if (player-range (opponent player) house)
-     (if (or (eq (get-beans house board) 2) 
-             (eq (get-beans house board) 3) )
-       (progn
-         (set-player-score player (get-beans house board))
-         (score (replace-nth board house 0) (1- house) player))
-       board)
-     board))
+  ;(format t "score ~d" player)
+  (if (or (player-range player house) (< house 0))
+    board
+    (if (or (eq (get-beans house board) 2) 
+            (eq (get-beans house board) 3) )
+      (progn
+        (set-player-score player (get-beans house board))
+        (score (replace-nth board house 0) (1- house) player))
+      board)))
 
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                  print the board with the score                   ;;;
+;;;                  print the board with the score                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -308,14 +332,13 @@
   (loop for line from 1 to 6 do
         (format t "    ~d" (car (nthcdr (- line 1) board)))
         )
-  (format t "~&    g    h    i    j    k    l  ")   
+  (format t "~&    g    h    i    j    k    l  ~%")   
   )
 
-
-
+;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;           return a list with the nth element replacede            ;;;
+;;;           return a list with the nth element replacede            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -324,4 +347,4 @@
          (cons elem (nthcdr (1+ n) list))) 
   )
 
-
+;;; }}} ;;;
