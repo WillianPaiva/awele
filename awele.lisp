@@ -24,6 +24,11 @@
 (defconstant south 1)
 (defvar *north-score* 0)
 (defvar *south-score* 0)
+(defvar *t-north-score* 0)
+(defvar *t-south-score* 0)
+(defvar *normal* t)
+
+
 ;;;}}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -117,15 +122,23 @@
 
 
 (defun game-loop (north-strategi south-strategi)
-  (let ((board *board*))
+  (let ((board *board*)
+        (player north)
+        (n-score 0)
+        (s-score 0)
+        (t-n-score 0)
+        (t-s-score 0)) 
     (reset-game)
-    (loop while (not (game-over))
-          do (progn 
-               (print-board board)
-               (setq board (turn board north-strategi north))
-               (print-board board)
-               (setq board (turn board south-strategi south))))
-    t))
+    (loop while (not (game-over player board n-score s-score))
+          do (progn
+               (print-board board n-score s-score)
+               (if (= player north)
+                 (multiple-value-setq (board t-n-score) (turn board north-strategi north))
+                 (multiple-value-setq (board t-s-score) (turn board south-strategi south)))
+               (setq player (opponent player))
+               (setq n-score (+ t-n-score n-score))
+               (setq s-score (+ t-s-score s-score))))
+    (print-board board n-score s-score)))
 
 ;;; }}} ;;;
 
@@ -136,7 +149,6 @@
 (defmethod turn (board strategi player)
   ;(format t "turn ~d" player)
   (make-move (funcall strategi player board) board player))
-
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -161,20 +173,34 @@
 
 
 (defun randon-stratey (player board)
-    (let ((li (valid-list player board)))
-      (if (listp li)
-        (nth (random (length li)) li)
-        (error "bad move"))))
+  (let ((li (valid-list player board)))
+    (if (listp li)
+      (nth (random (length li)) li)
+      (error "bad move"))))
+
+
+
+;;; }}} ;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;                            alpha-beta                             ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;(defun alpha-beta (player board)
+;)
+
+
 
 
 
 ;;; }}} ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             game-over                             ;;;{{{
+;;;                              game-over                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun game-over ()
-  (if (or (> *north-score* 24) (> *south-score* 24))
+(defun game-over (player board n-score s-score )
+  (if (or (or (> n-score 24) (> s-score 24)) (endp (valid-list player board)))
     t
     nil)
   )
@@ -195,6 +221,13 @@
     )
   )
 
+
+
+(defun get-last (beans move &optional (house move))
+  (if (zerop beans) 
+    house
+    (get-last (1- beans) move (next-house move (1+ house)))))
+
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -203,7 +236,7 @@
 
 
 (defun sum_beans (player board)
-  (if (eq player north)
+  (if (eq player south)
     (apply '+ (nthcdr 6 board) )
     (apply '+ (subseq board 0 6))))
 
@@ -212,6 +245,8 @@
     (setq *north-score* (+ *north-score* n))
     (setq *south-score* (+ *south-score* n))
     ))
+
+
 
 
 ;;; }}} ;;;
@@ -232,20 +267,20 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;             return list of valid moves for a player               ;;;{{{
+;;;             return list of valid  moves for a player               ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun valid-list (player board &optional (valid '()) (cn 11) (cs 5))
-    (if (or (eq cn 5) (eq cs -1))
-      valid
-      (if (eq player north)
-        (valid-list player board (if (valid_move cn player board) (cons cn valid) valid) (1- cn) cs)
-        (valid-list player board (if (valid_move cs player board) (cons cs valid) valid) cn (1- cs)))))
+(defun valid-list (player board &optional (valid '()) (cn 5) (cs 11))
+  (if (or (= cn -1) (= cs 5))
+    valid
+    (if (= player south)
+      (valid-list player board (if (valid_move cs player board) (cons cs valid) valid)  cn (1- cs))
+      (valid-list player board (if (valid_move cn player board) (cons cn valid) valid) (1- cn) cs))))
 
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           feed oponent                            ;;;{{{
+;;;                            feed oponent                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
 
 (defmethod feed-opponent (move player board)
@@ -271,9 +306,9 @@
 
 (defun player-range (player house)
   ;(format t "player range ~d   house --> ~d" player house)
-  (if (and (eq player north) (and (< house 12) (> house 5)))
+  (if (and (eq player south) (and (< house 12) (> house 5)))
     t
-    (if (and (eq player south) (and (> house -1) (< house 6)))
+    (if (and (eq player north) (and (> house -1) (< house 6)))
       t
       nil)
     )
@@ -289,7 +324,7 @@
 (defun spread-beans (beans house move board player)
   ;(format t "spread ~d" player)
   (if (zerop beans)
-    (score board (if (eq house 0) 11 (1- house)) player)
+    (score board (if (eq house 0) 11 (1- house)) player)    
     (spread-beans (1- beans) (next-house move (1+ house)) move 
                   (replace-nth board house (+ (car (nthcdr house board)) 1)) player)
     )
@@ -301,18 +336,14 @@
 ;;;                           update score                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun score (board house player)
+(defun score (board house player &optional (score 0))
   ;(format t "score ~d" player)
   (if (or (player-range player house) (< house 0))
-    board
+    (values board score)
     (if (or (eq (get-beans house board) 2) 
             (eq (get-beans house board) 3) )
-      (progn
-        (set-player-score player (get-beans house board))
-        (score (replace-nth board house 0) (1- house) player))
-      board)))
-
-;;; }}} ;;;
+      (score (replace-nth board house 0) (1- house) player (+ score (get-beans house board)))
+      (values board score))));;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                  print the board with the score                   ;;;{{{
@@ -321,18 +352,18 @@
 
 
 
-(defun print-board (board)  
-  (format t "~2&    a    b    c    d    e    f         [North=~2a South=~2a]"
-          *north-score* *south-score* )          
+(defun print-board (board n-score s-score)  
+  (format t "~2&    c5    c4    c3    c2    c1    c0         [North=~2a South=~2a]"
+          n-score s-score )          
   (format t "~%")
   (loop for line from 1 to 6 do
-        (format t "    ~d" (car (nthcdr (- 12 line) board)))
+        (format t "    ~2d" (car (nthcdr (- 6 line) board)))
         )
   (format t "~%")
   (loop for line from 1 to 6 do
-        (format t "    ~d" (car (nthcdr (- line 1) board)))
+        (format t "    ~2d" (car (nthcdr (+ line 5) board)))
         )
-  (format t "~&    g    h    i    j    k    l  ~%")   
+  (format t "~&    c6    c7    c8    c9    c10    c11  ~%")   
   )
 
 ;;; }}} ;;;
