@@ -140,8 +140,15 @@
                (setq s-score (+ t-s-score s-score))))
     (print-board board n-score s-score)))
 
-<<<<<<< HEAD
-(defmethod turn (board strategi player)
+
+;;; }}} ;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                               turn                                ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defun turn (board strategi player)
   ;(format t "turn ~d" player)
   (make-move (funcall strategi player board) board player))
 ;;; }}} ;;;
@@ -212,7 +219,7 @@
       (next-house move (+ house 1))
       house
       )
-    )
+    ))
 
 
 
@@ -233,6 +240,12 @@
     (apply '+ (nthcdr 6 board) )
     (apply '+ (subseq board 0 6))))
 
+
+(defun get-beans (house board)
+    (car (nthcdr house board)))
+
+
+
 (defun set-player-score (player n)
   (if (eql player north)
     (setq *north-score* (+ *north-score* n))
@@ -248,12 +261,12 @@
 ;;;                     return if move is valid                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (defun valid_move (move player board)
-    ;(format t "valid move ~d" player)
-    (and 
-      (> (get-beans move board) 0) 
-      (player-range player move)) 
-    (feed-opponent move player board))) 
+(defun valid_move (move player board)
+  ;(format t "valid move ~d" player)
+  (and 
+    (> (get-beans move board) 0) 
+    (player-range player move)) 
+  (feed-opponent move player board)) 
 
 ;;; }}} ;;;
 
@@ -273,16 +286,18 @@
 ;;;                            feed oponent                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
 
-(defmethod feed-opponent (move player board)
+(defun feed-opponent (move player board)
   (if (> (sum_beans (opponent player) board) 0)
     t
     (if (and (> move -1) (< move 6))
       (> (+ (get-beans move board) move) 5)
       (> (+ (get-beans move board) move) 11))))
 
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;             return if a house is in the player range              ;;;{{{
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;             return if a house is in the player range              ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-range (player house)
   ;(format t "player range ~d   house --> ~d" player house)
@@ -291,7 +306,7 @@
     (if (and (eq player north) (and (> house -1) (< house 6)))
       t
       nil)
-    )
+    ))
 
 ;;; }}} ;;;
 
