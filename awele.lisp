@@ -16,15 +16,87 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     playe r definitions                            ;;;{{{
+;;;                      main-standalone (case)                       ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun main-standalone (x)
+  (let ((move 22)
+        (t-n-score 0)
+        (t-s-score 0))
+    (if (not (equal x nil))
+      (if (= *ai* north)
+        (progn 
+          (multiple-value-setq (*board* t-s-score) (make-move x *board* south))
+          (setq *south-score* (+ *south-score* t-s-score))
+          (setq t-s-score 0)
+          (setq move (ai-strategy north *board* *north-score* *south-score*))
+          (multiple-value-setq (*board* t-n-score) (make-move move *board* north))
+          (setq *north-score* (+ *north-score* t-n-score))
+          (setq t-n-score 0))
+        (progn 
+          (multiple-value-setq (*board* t-n-score) (make-move x *board* north))
+          (setq *north-score* (+ *north-score* t-n-score))
+          (setq t-n-score 0)
+          (setq move (ai-strategy south  *board* *north-score* *south-score*))
+          (multiple-value-setq (*board* t-s-score) (make-move move *board* south))
+          (setq *south-score* (+ *south-score* t-s-score))
+          (setq t-s-score 0)))
+      (if (= *ai* north)
+        (progn
+          (setq move (ai-strategy north *board* *north-score* *south-score*))
+          (multiple-value-setq (*board* t-n-score) (make-move move *board* north))
+          (setq *north-score* (+ *north-score* t-n-score))
+          (setq t-n-score 0))
+        (progn 
+          (setq move (ai-strategy south  *board* *north-score* *south-score*))
+          (multiple-value-setq (*board* t-s-score) (make-move move *board* south))
+          (setq *south-score* (+ *south-score* t-s-score))
+          (setq t-s-score 0))))
+    move))
+
+
+
+
+;;; }}} ;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                            game start                             ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun awele ()
+    (if (= *ai* north)
+      (game-loop #'ai-strategy #'human-strategi)
+      (game-loop #'human-strategi #'ai-strategy)))
+
+
+;;; }}} ;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                           init-standalone                         ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun init-standalone (x)
+    (if (not (equal x nil))
+      (setq *ai* south)
+      (setq *ai* north)))
+
+;;; }}} ;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                     player definitions                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconstant north 0)
 (defconstant south 1)
-(defvar *north-score* 0)
-(defvar *south-score* 0)
 (defvar *ai* north)
+
 
 ;;;}}}
 
@@ -32,65 +104,19 @@
 ;;;                        board definitions                          ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+(defvar *north-score* 0)
+(defvar *south-score* 0)
 (defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
+
+(defun reset-game ()
+    (setq *north-score* 0)
+    (setq *south-score* 0)
+    (setq *board* '(4 4 4 4 4 4 4 4 4 4 4 4)))
+
 ;;;}}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           upper board                             ;;;{{{
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defconstant a 11)
-(defconstant b 10)
-(defconstant c 9)
-(defconstant d 8)
-(defconstant e 7)
-(defconstant f 6)
-
-;;; }}} ;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           lower board                             ;;;{{{
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defconstant g 0)
-(defconstant h 1)
-(defconstant i 2)
-(defconstant j 3)
-(defconstant k 4)
-(defconstant l 5)
-
-;;; }}} ;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                      reset board and scores                       ;;;{{{
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun reset-game ()
-  (reset-score)
-  (starting_board)
-  )
-
-
-
-(defun reset-score ()
-  (setf *north-score* 0)
-  (setf *south-score* 0)
-  )
-
-
-
-
-(defun starting_board ()
-  (setf *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
-  )
-
-
-;;; }}} ;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                      re turn opposite player                       ;;;{{{
+;;;                      return opposite player                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -119,13 +145,13 @@
 
 
 (defun game-loop (north-strategi south-strategi)
+  (reset-game)
   (let ((board *board*)
         (player north)
         (n-score 0)
         (s-score 0)
         (t-n-score 0)
         (t-s-score 0)) 
-    (reset-game)
     (loop while (not (game-over player board n-score s-score))
           do (progn
                (print-board board n-score s-score)
@@ -144,9 +170,27 @@
         (setq board '(0 0 0 0 0 0 0 0 0 0 0 0))
         (print-board board n-score s-score)
         )
-      (print-board board n-score s-score))))
+      (print-board board n-score s-score))
+  (if (= n-score s-score)
+    2
+    (if (> n-score s-score)
+      0
+      1))))
 
 
+
+
+
+(defun test (&optional (nor 0) (draw 0) (sou 0))
+  (dotimes (x 1000) 
+    (let ((result (game-loop #'ai-strategy #'randon-stratey)))
+      (format t "---> ~d" x)
+      (if (= result 2)
+        (setq draw (1+ draw))
+        (if (= result 0)
+          (setq nor (1+ nor))
+          (setq sou (1+ sou))))))
+  (list draw nor sou))
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,7 +215,12 @@
           (format t "    ~d" (car (nthcdr line li))))
     (format t "~%")
     (format t "please enter your move ~%")
-    (read)))
+    (let ((move (read)))
+      (if (member move li)
+        move
+        (progn
+          (format t "INVALID MOVE ~%")
+          (human-strategi player board n-score s-score))))))
 
 ;;; }}} ;;;
 
@@ -309,7 +358,6 @@
 
 ;;; }}} ;;;
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;             return list of valid  moves for a player               ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -389,17 +437,26 @@
 
 
 (defun print-board (board n-score s-score)  
-  (format t "~2&    c5    c4    c3    c2    c1    c0         [North=~2a South=~2a]"
-          n-score s-score )          
   (format t "~%")
+  (format t "~%")
+  (format t "===========================================~%")
+  (format t "~&|  c5  |  c4  |  c3  |  c2  |  c1  |  c0  |       [North=~2a South=~2a] ~%"
+          n-score s-score )
+  (format t "===========================================~%")
+  (format t "|")
   (loop for line from 1 to 6 do
-        (format t "    ~2d" (car (nthcdr (- 6 line) board)))
+        (format t "  ~2d  |" (car (nthcdr (- 6 line) board)))
         )
   (format t "~%")
+  (format t "-------------------------------------------~%")
+  (format t "|")
   (loop for line from 1 to 6 do
-        (format t "    ~2d" (car (nthcdr (+ line 5) board)))
+        (format t "  ~2d  |" (car (nthcdr (+ line 5) board)))
         )
-  (format t "~&    c6    c7    c8    c9    c10    c11  ~%")   
+  (format t "~%")
+  (format t "===========================================~%")
+  (format t "~&|  c6  |  c7  |  c8  |  c9  |  c10 |  c11 |~%")   
+  (format t "===========================================~%")
   )
 
 ;;; }}} ;;;
