@@ -26,6 +26,13 @@
 ;;;                      main-standalone (case)                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;;takes a move axecute and return ai move it parameter nil execute just the ai move and return it 
+;; case a move is passed as a parameter execute player move and followed by ai move and return it
+;; attention as this function uses variables to hold the board and score states it need to be reset before starting a function ---> game reset-game
+
+
 (defun main-standalone (x)
   (let ((move 22)
         (t-n-score 0)
@@ -70,6 +77,9 @@
 ;;;                            game start                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; start the axele game playing human vs ai 
+
+
 (defun awele ()
     (if (= *ai* north)
       (game-loop #'ai-strategy #'human-strategi)
@@ -79,8 +89,10 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           init-standalone                         ;;;
+;;;                           init-standalone                         ;;;{{{ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; define were ai play as north ore south 
 
 (defun init-standalone (x)
     (if (not (equal x nil))
@@ -90,7 +102,7 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     player definitions                            ;;;{{{
+;;;                     player definitions                            ;;;{{{ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconstant north 0)
@@ -101,12 +113,16 @@
 ;;;}}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                        board definitions                          ;;;{{{
+;;;                        board definitions                          ;;;{{{ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar *north-score* 0)
 (defvar *south-score* 0)
 (defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
+
+
+;; reset the game to initial stage
+
 
 (defun reset-game ()
     (setq *north-score* 0)
@@ -120,29 +136,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;takes a player and return the opponent
 
 (defun opponent (player) (if (eql player north) south north))
 
 
-;;; }}} ;;;
+;;; }}} ;;; 
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                              make move                             ;;;{{{
+;;;                              game loop                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun make-move (move board player)
-  ;(format t "make move ~d" player)
-  (let ((beans (car (nthcdr move board))))
-    (if (valid_move move player board)
-      (spread-beans beans (next-house move (1+ move)) move 
-                    (replace-nth board move 0) player)
-      (error "not a valid move"))))
-;;; }}} ;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             game loop                             ;;;{{{
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;starts the game loop north is always the first to play 
 
 (defun game-loop (north-strategi south-strategi)
   (reset-game)
@@ -197,6 +203,8 @@
 ;;;                               turn                                ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; makes the play turn gettind the move from the proper strategy 
+;; returns modified board and player new score
 
 (defun turn (board strategi player n-score s-score)
   ;(format t "turn ~d" player)
@@ -204,8 +212,30 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                          human strategi                           ;;;{{{
+;;;                               make move                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; makes the player move  
+;; returns modified board and player new score
+
+(defun make-move (move board player)
+  ;(format t "make move ~d" player)
+  (let ((beans (car (nthcdr move board))))
+    (if (valid_move move player board)
+      (spread-beans beans (next-house move (1+ move)) move 
+                    (replace-nth board move 0) player)
+      (error "not a valid move"))))
+;;; }}} ;;;
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                           human strategi                           ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;sent a prompt to the human player presenting all possible moves and return player choice
 
 (defun human-strategi (player board n-score s-score)
   (declare (ignore n-score) (ignore s-score))
@@ -228,7 +258,7 @@
 ;;;                          random strategi                          ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+;;return a random move based on the possible moves for a player
 
 (defun randon-stratey (player board n-score s-score)
   (declare (ignore n-score) (ignore s-score))
@@ -244,12 +274,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ;                            alpha-beta                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defconstant winning-value most-positive-fixnum)
-(defconstant losing-value  most-negative-fixnum)
+
+
+;; return a move based on a alpha-beta algorthim 
 
 (defun ai-strategy (player board n-score s-score)
   (multiple-value-bind (value move)
-    (alpha-beta player board n-score s-score -200 200 6) 
+    (alpha-beta player board n-score s-score -200 200 8) 
     (declare (ignore value))
     move))
 
@@ -285,8 +316,10 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                              game-over                             ;;;{{{
+;;;                               game-over                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; return if game is over
 
 (defun game-over (player board n-score s-score )
   (if (or (or (> n-score 24) (> s-score 24)) (endp (valid-list player board)))
@@ -298,6 +331,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                  return next house for the move                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;computes the next house followin the rules of the game 
+
 
 (defun next-house (move house)
   (if (> house 11)
@@ -318,36 +355,31 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                 return sum of beans for a player                  ;;;{{{
+;;;                 sum_beans and get-beans                           ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+;; return the sum of the beans of a player 
 
 (defun sum_beans (player board)
   (if (eq player south)
     (apply '+ (nthcdr 6 board) )
     (apply '+ (subseq board 0 6))))
 
+;; get the beans of a given house
 
 (defun get-beans (house board)
   (car (nthcdr house board)))
 
 
-
-(defun set-player-score (player n)
-  (if (eql player north)
-    (setq *north-score* (+ *north-score* n))
-    (setq *south-score* (+ *south-score* n))
-    ))
-
-
-
-
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     return if move is valid                       ;;;{{{
+;;;                     return if move is  valid                       ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;define if a move is valid or not
 (defun valid_move (move player board)
   ;(format t "valid move ~d" player)
   (and
@@ -362,6 +394,8 @@
 ;;;             return list of valid  moves for a player               ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;;make a list with valid list of moves da a player 
 (defun valid-list (player board &optional (valid '()) (cn 5) (cs 11))
   (if (or (= cn -1) (= cs 5))
     valid
@@ -376,6 +410,8 @@
 ;;;                            feed oponent                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
 
+
+;;check if a move feeds the oponent 
 (defun feed-opponent (move player board)
   (if (> (sum_beans (opponent player) board) 0)
     t
@@ -387,7 +423,7 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;             return if a house is in the player range              ;;;{{{
+;;;              return if a house is in the player range              ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-range (player house)
@@ -405,6 +441,8 @@
 ;;;                   spread the beans after a move                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;spread the beans and return a a board and score 
+
 
 (defun spread-beans (beans house move board player)
   ;(format t "spread ~d" player)
@@ -416,8 +454,11 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           update score                            ;;;{{{
+;;;                            update score                            ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; update the player score after a move 
 
 (defun score (board house player &optional (score 0))
   ;(format t "score ~d" player)
@@ -430,7 +471,7 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                  print the board with the score                   ;;;{{{
+;;;               print the board with the score                   ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
