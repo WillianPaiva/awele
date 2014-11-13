@@ -15,7 +15,35 @@
 ;;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.              ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                     player definitions                            ;;;{{{ 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defconstant north 0)
+(defconstant south 1)
+(defvar *ai* north)
+
+
+;;;}}}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                        board definitions                          ;;;{{{ 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar *north-score* 0)
+(defvar *south-score* 0)
+(defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
+
+
+;; reset the game to initial stage
+
+
+(defun reset-game ()
+    (setq *north-score* 0)
+    (setq *south-score* 0)
+    (setq *board* '(4 4 4 4 4 4 4 4 4 4 4 4)))
+
+;;;}}}
 
 
 
@@ -34,7 +62,7 @@
 
 
 (defun main-standalone (x)
-  (let ((move 22)
+  (let ((move nil)
         (t-n-score 0)
         (t-s-score 0))
     (if (not (equal x nil))
@@ -95,41 +123,14 @@
 ;; define were ai play as north ore south 
 
 (defun init-standalone (x)
-    (if (not (equal x nil))
+  (reset-game)
+  (if (not (equal x nil))
       (setq *ai* south)
       (setq *ai* north)))
 
 ;;; }}} ;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     player definitions                            ;;;{{{ 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defconstant north 0)
-(defconstant south 1)
-(defvar *ai* north)
-
-
-;;;}}}
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                        board definitions                          ;;;{{{ 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defvar *north-score* 0)
-(defvar *south-score* 0)
-(defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
-
-
-;; reset the game to initial stage
-
-
-(defun reset-game ()
-    (setq *north-score* 0)
-    (setq *south-score* 0)
-    (setq *board* '(4 4 4 4 4 4 4 4 4 4 4 4)))
-
-;;;}}}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                      return opposite player                       ;;;{{{
@@ -238,7 +239,6 @@
 ;;sent a prompt to the human player presenting all possible moves and return player choice
 
 (defun human-strategi (player board n-score s-score)
-  (declare (ignore n-score) (ignore s-score))
   (let ((li (valid-list player board)))
     (format t "valid moves -->")
     (loop for line from 0 to (1-(length li)) do
