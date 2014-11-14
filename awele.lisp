@@ -125,8 +125,8 @@
 (defun init-standalone (x)
   (reset-game)
   (if (not (equal x nil))
-      (setq *ai* south)
-      (setq *ai* north)))
+      (setq *ai* north)
+      (setq *ai* south)))
 
 ;;; }}} ;;;
 
