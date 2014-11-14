@@ -221,11 +221,14 @@
 
 (defun make-move (move board player)
   ;(format t "make move ~d" player)
-  (let ((beans (car (nthcdr move board))))
-    (if (valid_move move player board)
-      (spread-beans beans (next-house move (1+ move)) move 
-                    (replace-nth board move 0) player)
-      (error "not a valid move"))))
+  (if move
+    (progn 
+      (let ((beans (car (nthcdr move board))))
+        (if (valid_move move player board)
+          (spread-beans beans (next-house move (1+ move)) move 
+                        (replace-nth board move 0) player)
+          (error "not a valid move"))))
+    (values board 0)))
 ;;; }}} ;;;
 
 
@@ -280,15 +283,15 @@
 
 (defun ai-strategy (player board n-score s-score)
   (multiple-value-bind (value move)
-    (alpha-beta player board n-score s-score -200 200 8) 
+    (alpha-beta player board n-score s-score -200 200 6) 
     (declare (ignore value))
     move))
 
 (defun alpha-beta (player board n-score s-score alpha beta depth)
-  (if (or (= depth 0) (game-over player board n-score s-score))
+  (if (= depth 0) 
     (eval-s player n-score s-score)
     (let* ((moves (valid-list player board))
-           (b-move (first moves)))
+           (b-move (if (endp moves) nil (first moves))))
       (loop for move in moves do
             (let* ((l-board-score (multiple-value-list (make-move move (copy-seq board) player)))
                    (board2 (car l-board-score))
