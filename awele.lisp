@@ -189,7 +189,7 @@
 
 
 (defun test (&optional (nor 0) (draw 0) (sou 0))
-  (dotimes (x 1000) 
+  (dotimes (x 10) 
     (let ((result (game-loop #'ai-strategy #'randon-stratey)))
       (format t "---> ~d" x)
       (if (= result 2)
@@ -319,7 +319,7 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                               game-over                             ;;;{{{
+;;;                                game-over                             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; return if game is over
@@ -384,13 +384,13 @@
 
 ;;define if a move is valid or not
 (defun valid_move (move player board)
-  ;(format t "valid move ~d" player)
-  (and
-    (and 
-      (> (get-beans move board) 0) 
-      (player-range player move)) 
-    (feed-opponent move player board))) 
-
+  (let ((b-copy (spread-beans (get-beans move board) (next-house move (1+ move)) 
+                              move (replace-nth board move 0) player)))
+    (and
+      (and 
+        (> (get-beans move board) 0) 
+        (player-range player move)) 
+      (>(sum_beans (opponent player) b-copy) 0))))
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
