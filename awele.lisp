@@ -21,6 +21,7 @@
 
 (defconstant north 0)
 (defconstant south 1)
+(defconstant draw 2)
 (defvar *ai* north)
 
 
@@ -30,10 +31,10 @@
 ;;;                        board definitions                          ;;;{{{ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defconstant max-score 25)
 (defvar *north-score* 0)
 (defvar *south-score* 0)
 (defvar *board* '(4 4 4 4 4 4 4 4 4 4 4 4))
-
 
 ;; reset the game to initial stage
 
@@ -110,8 +111,8 @@
 
 (defun awele ()
     (if (= *ai* north)
-      (game-loop #'ai-strategy #'human-strategi)
-      (game-loop #'human-strategi #'ai-strategy)))
+      (game-loop #'ai-strategy #'human-strategy)
+      (game-loop #'human-strategy #'ai-strategy)))
 
 
 ;;; }}} ;;;
@@ -124,7 +125,7 @@
 
 (defun init-standalone (x)
   (reset-game)
-  (if (not (equal x nil))
+  (if x
       (setq *ai* north)
       (setq *ai* south)))
 
@@ -151,7 +152,7 @@
 
 ;;starts the game loop north is always the first to play 
 
-(defun game-loop (north-strategi south-strategi)
+(defun game-loop (north-strategy south-strategy)
   (reset-game)
   (let ((board *board*)
         (player north)
@@ -163,14 +164,14 @@
           do (progn
                (print-board board n-score s-score)
                (if (= player north)
-                 (multiple-value-setq (board t-n-score) (turn board north-strategi north n-score s-score))
-                 (multiple-value-setq (board t-s-score) (turn board south-strategi south n-score s-score)))
+                 (multiple-value-setq (board t-n-score) (turn board north-strategy north n-score s-score))
+                 (multiple-value-setq (board t-s-score) (turn board south-strategy south n-score s-score)))
                (setq player (opponent player))
                (setq n-score (+ t-n-score n-score))
                (setq s-score (+ t-s-score s-score))
                (setq t-n-score 0)
                (setq t-s-score 0)))
-    (if (and (> 25 n-score) (> 25 s-score))
+    (if (and (> max-score n-score) (> max-score s-score))
       (progn 
         (setq n-score (+ n-score (sum_beans north board)))
         (setq s-score (+ s-score (sum_beans south board)))
@@ -179,25 +180,25 @@
         )
       (print-board board n-score s-score))
   (if (= n-score s-score)
-    2
+    draw
     (if (> n-score s-score)
-      0
-      1))))
+      north
+      south))))
 
 
 
 
 
-(defun test (&optional (nor 0) (draw 0) (sou 0))
+(defun test (&optional (nor 0) (dr 0) (sou 0))
   (dotimes (x 10) 
-    (let ((result (game-loop #'ai-strategy #'randon-stratey)))
+    (let ((result (game-loop #'ai-strategy #'random-strategy)))
       (format t "---> ~d" x)
-      (if (= result 2)
-        (setq draw (1+ draw))
-        (if (= result 0)
+      (if (= result draw)
+        (setq dr (1+ dr))
+        (if (= result north)
           (setq nor (1+ nor))
           (setq sou (1+ sou))))))
-  (list draw nor sou))
+  (list dr nor sou))
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -207,9 +208,9 @@
 ;; makes the play turn gettind the move from the proper strategy 
 ;; returns modified board and player new score
 
-(defun turn (board strategi player n-score s-score)
+(defun turn (board strategy player n-score s-score)
   ;(format t "turn ~d" player)
-  (make-move (funcall strategi player board n-score s-score) board player))
+  (make-move (funcall strategy player board n-score s-score) board player))
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -235,13 +236,13 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                           human strategi                           ;;;{{{
+;;;                           human strategy                           ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;sent a prompt to the human player presenting all possible moves and return player choice
 
-(defun human-strategi (player board n-score s-score)
+(defun human-strategy (player board n-score s-score)
   (let ((li (valid-list player board)))
     (format t "valid moves -->")
     (loop for line from 0 to (1-(length li)) do
@@ -253,17 +254,17 @@
         move
         (progn
           (format t "INVALID MOVE ~%")
-          (human-strategi player board n-score s-score))))))
+          (human-strategy player board n-score s-score))))))
 
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                          random strategi                          ;;;{{{
+;;;                          random strategy                          ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;return a random move based on the possible moves for a player
 
-(defun randon-stratey (player board n-score s-score)
+(defun random-strategy(player board n-score s-score)
   (declare (ignore n-score) (ignore s-score))
   (let ((li (valid-list player board)))
     (if (listp li)
@@ -312,8 +313,8 @@
 
 (defun eval-s (player n-score s-score)
   (if (= player north)
-    (if (>= n-score 24) (- (+ 100 n-score) s-score) (- n-score s-score))
-    (if (>= s-score 24) (- (+ 100 s-score) n-score) (- s-score n-score))))
+    (if (> n-score max-score) (- (+ 100 n-score) s-score) (- n-score s-score))
+    (if (> s-score max-score) (- (+ 100 s-score) n-score) (- s-score n-score))))
 
 
 ;;; }}} ;;;
@@ -325,7 +326,7 @@
 ;; return if game is over
 
 (defun game-over (player board n-score s-score )
-  (if (or (or (> n-score 24) (> s-score 24)) (endp (valid-list player board)))
+  (if (or (or (>= n-score max-score) (>= s-score max-score)) (endp (valid-list player board)))
     t
     nil)
   )
@@ -410,9 +411,8 @@
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                            feed oponent                            ;;;{{{
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;);;;;;;;;;;;;;;;;;;
-
+;;;                            feed oponent (unused)                  ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;check if a move feeds the oponent 
 (defun feed-opponent (move player board)
@@ -425,8 +425,8 @@
 
 ;;; }}} ;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;              return if a house is in the player range              ;;;{{{
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;              return if a house is in the player range             ;;;{{{
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun player-range (player house)
