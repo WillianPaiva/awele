@@ -447,12 +447,12 @@
 ;;spread the beans and return a a board and score 
 
 
-(defun spread-beans (beans house move board player)
+(defun spread-beans (beans house move board player &optional last-house)
   ;(format t "spread ~d" player)
   (if (zerop beans)
-    (score board (if (eq house 0) 11 (1- house)) player)    
+      (score board last-house player)      
     (spread-beans (1- beans) (next-house move (1+ house)) move 
-                  (replace-nth board house (+ (car (nthcdr house board)) 1)) player)))
+                  (replace-nth board house (+ (car (nthcdr house board)) 1)) player house)) )
 
 ;;; }}} ;;;
 
@@ -463,14 +463,14 @@
 
 ;; update the player score after a move 
 
-(defun score (board house player &optional (score 0))
+(defun score (board house player &optional (score 0) )
   ;(format t "score ~d" player)
   (if (or (player-range player house) (< house 0))
-    (values board score)
-    (if (or (eq (get-beans house board) 2) 
-            (eq (get-beans house board) 3) )
-      (score (replace-nth board house 0) (1- house) player (+ score (get-beans house board)))
-      (values board score))))
+      (values board score)
+      (if (or (eq (get-beans house board) 2) 
+              (eq (get-beans house board) 3) )
+          (score (replace-nth board house 0) (1- house) player (+ score (get-beans house board)) )
+          (values board score))))
 ;;; }}} ;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
