@@ -447,7 +447,7 @@
 ;;spread the beans and return a a board and score 
 
 
-(defun spread-beans (beans house move board player &optional last-house)
+(defun spread-beans (beans house move board player &optional (last-house -1))
   ;(format t "spread ~d" player)
   (if (zerop beans)
       (score board last-house player)      
